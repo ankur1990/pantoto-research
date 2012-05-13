@@ -1,16 +1,18 @@
 from engine import *
 
-pagelets = Pagelets()
-exam = pagelets.addPagelet("exam")
+system = System()
 
-exam.addField(Field("Q"))                  #Question
-exam.addField(Field("A"))                  #Answer
-exam.addField(Field("G"))                  #Grade
+exam = Pagelet("exam")
+system.addPagelet(exam)
 
-exam.addUserToView("S")
-exam.addUserToView("T")
+system.addField(Field("Q"))                  #Question
+system.addField(Field("A"))                  #Answer
+system.addField(Field("G"))                  #Grade
 
-exam.addFieldToView("T","Q","rw")
+system.addUser("S")
+system.addUser("T")
+
+system.addFieldToView("T","exam","Q","rw")
 
 # setting initial state
 
@@ -19,7 +21,7 @@ stated["S"]="ready"
 stated["T"]="setting"
 state = State(stated)
 
-exam.setInitialState(state)
+system.setInitialState(state)
 
 #defining 1st transition
 
@@ -31,12 +33,14 @@ newstate = State(newstated)
 perm = {}
 perm["S"]={}
 perm["T"]={}
-perm["S"]["Q"]="r-"
-perm["S"]["A"]="rw"
-perm["T"]["Q"]="r-"
+perm["S"]["exam"]={}
+perm["T"]["exam"]={}
+perm["S"]["exam"]["Q"]="r-"
+perm["S"]["exam"]["A"]="rw"
+perm["T"]["exam"]["Q"]="r-"
 
 t = Transition(state, newstate, perm)
-exam.addTransition(t,"sendpaper")
+system.addTransition(t,"sendpaper")
 
 #defining 2nd transition
 
@@ -50,13 +54,15 @@ newstate = State(newstated)
 perm = {}
 perm["S"]={}
 perm["T"]={}
-perm["S"]["A"]="r-"
-perm["T"]["Q"]="r-"
-perm["T"]["A"]="r-"
-perm["T"]["G"]="rw"
+perm["S"]["exam"]={}
+perm["T"]["exam"]={}
+perm["S"]["exam"]["A"]="r-"
+perm["T"]["exam"]["Q"]="r-"
+perm["T"]["exam"]["A"]="r-"
+perm["T"]["exam"]["G"]="rw"
 
 t = Transition(state, newstate, perm)
-exam.addTransition(t,"sendanswer")
+system.addTransition(t,"sendanswer")
 
 #defining 3rd transition
 
@@ -70,28 +76,30 @@ newstate = State(newstated)
 perm = {}
 perm["S"]={}
 perm["T"]={}
-perm["S"]["G"]="r-"
-perm["T"]["G"]="r-"
+perm["S"]["exam"]={}
+perm["T"]["exam"]={}
+perm["S"]["exam"]["G"]="r-"
+perm["T"]["exam"]["G"]="r-"
 
 t = Transition(state, newstate, perm)
-exam.addTransition(t,"sendgrade")
+system.addTransition(t,"sendgrade")
 
 #executing actions
 
-print exam.setFieldByUser("S","Q","abc")    #prints false as student doesnt have permission to set Q
-print exam.setFieldByUser("T","Q","abc")    #prints true as teacher has rw permission on Q and sets Q to "abc"
-print exam.getFieldByUser("S","Q")          #prints None as student doesnt have permission on Q
-print exam.getFieldByUser("T","Q")          #prints Q as teacher has rw permission on Q
-print exam.setFieldByUser("S","A","abc")    #prints false as student doesnt have permission to set A
+print system.setFieldByUser("S","exam","Q","abc")    #prints false as student doesnt have permission to set Q
+print system.setFieldByUser("T","exam","Q","abc")    #prints true as teacher has rw permission on Q and sets Q to "abc"
+print system.getFieldByUser("S","exam","Q")          #prints None as student doesnt have permission on Q
+print system.getFieldByUser("T","exam","Q")          #prints Q as teacher has rw permission on Q
+print system.setFieldByUser("S","exam","A","abc")    #prints false as student doesnt have permission to set A
 
-print exam.executeAction("sendanswer")      #prints false as it doesnt matches the transition rules
-print exam.executeAction("sendpaper")       #prints true as it matches the transition rules
+print system.executeAction("sendanswer")      #prints false as it doesnt matches the transition rules
+print system.executeAction("sendpaper")       #prints true as it matches the transition rules
 
-print exam.setFieldByUser("S","Q","abc")    #prints false as student has r- permission on Q
-print exam.getFieldByUser("S","Q")          #prints Q as student has r- permission on Q
-print exam.setFieldByUser("T","Q","abc")    #prints false as teacher has r- permission on Q
-print exam.setFieldByUser("S","A","abc")    #prints true as student has rw permission on A
+print system.setFieldByUser("S","exam","Q","abc")    #prints false as student has r- permission on Q
+print system.getFieldByUser("S","exam","Q")          #prints Q as student has r- permission on Q
+print system.setFieldByUser("T","exam","Q","abc")    #prints false as teacher has r- permission on Q
+print system.setFieldByUser("S","exam","A","abc")    #prints true as student has rw permission on A
 
-print exam.executeAction("sendanswer")      #prints true as it matches the transition rules
-print exam.executeAction("sendgrade")       #prints true as it matches the transition rules
+print system.executeAction("sendanswer")      #prints true as it matches the transition rules
+print system.executeAction("sendgrade")       #prints true as it matches the transition rules
 
