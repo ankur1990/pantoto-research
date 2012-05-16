@@ -17,10 +17,10 @@ class State:
 
 class Transition:
 
-    def __init__(self, state, new_state, permissions):    #permissions is the dict (user->(pagelet->(field->perm))) of the changed permissions cause of the transition. state new_state are of type State.
+    def __init__(self, state, new_state, hook ):         #state new_state are of type State.
         self.initialState = state
         self.newState = new_state
-        self.perm = permissions
+        self.hook = hook
 
 
 class Transitions:
@@ -31,7 +31,7 @@ class Transitions:
     def addTransition(self,trans,action):            #trans is of type Transition, action is a string in this case.
         if not self.transitions.has_key(action):
             self.transitions[action]={}
-        self.transitions[action][trans.initialState.getState()] = [trans.newState.getState(), trans.perm]
+        self.transitions[action][trans.initialState.getState()] = [trans.newState.getState(), trans.hook]
 
     def executeAction(self, action, state):
         if not self.transitions.has_key(action):
@@ -102,22 +102,28 @@ class Pagelet:
 
     def __init__(self,label):
         self.label = label
-    
+        self.fields = Fields()
+
     def getLabel(self):                #label is a string
         return self.label
-    
+
+    def addField(self, field):            #field is of type Field
+        self.fields.addField(field)
+
+
 
 class Pagelets:
 
     def __init__(self):
         self.pagelets={}
 
-    def addPagelet(self, pageletlabel):
-        temp = Pagelet(pageletlabel)
-        self.pagelets[pageletlabel]= temp
-        return temp
+    def addPagelet(self, pagelet):
+        self.pagelets[pagelet.getLabel()] = pagelet
+        return pagelet
          
     def getPagelet(self, pageletlabel):
+        if not self.pagelets.has_key(pageletlabel):
+            return None
         return self.pagelets[pageletlabel]
 
     def getAllPagelets(self):        # returns a dictionary with label->pagelet
@@ -131,15 +137,18 @@ class System:
         self.view = {}                #view is a dictionary - user -> pageletlabel -> fieldlabel -> perm
         self.transitions = Transitions()
         self.currentState = None
-        self.fields = Fields()
         self.users = Users()
         self.pagelets = Pagelets()
 
-    def addField(self, field):            #field is of type Field
-        self.fields.addField(field)
+    def addField(self, pageletlabel, field):            #field is of type Field
+        pagelet = self.pagelets.getPagelet(pageletlabel)
+        if pagelet == None:
+            return False
+        pagelet.addField(field)
+        return True
 
-    def addPagelet(self, pagelet):
-        self.pagelets.addPagelet(pagelet)
+    def addPagelet(self, pageletlabel):
+        self.pagelets.addPagelet(Pagelet(pageletlabel))
 
     def addUser(self, user):
         self.users.addUser(user)
@@ -182,23 +191,19 @@ class System:
         if temp==None:
             return False
         self.setCurrentState(State(temp[0]))
-        for user in temp[1]:
-            for pageletlabel in temp[1][user]:
-                for fieldlabel in temp[1][user][pageletlabel]:
-                    perm = temp[1][user][pageletlabel][fieldlabel]
-                    self.updateFieldView(user,pageletlabel,fieldlabel,perm)
+        temp[1](self)                                                 #calling the hook
         return True
 
     def getFieldByUser(self,user,pageletlabel,fieldlabel):            #get value of field if the user has permission to read it. Returns None if cant be read.
         if self.getPermissions(user,pageletlabel,fieldlabel) in ["rw","r-"]:
-            return self.fields.getValueByField(fieldlabel)
+            return self.pagelets.getPagelet(pageletlabel).fields.getValueByField(fieldlabel)
         else:
             return None
 
 
     def setFieldByUser(self,user,pageletlabel,fieldlabel,val):            #set value of field if the user has permission to write on it. Returns True if set, False if not.
         if self.getPermissions(user, pageletlabel, fieldlabel) in ["rw","-w"]:
-            return self.fields.setValueByField(fieldlabel, val)
+            return self.pagelets.getPagelet(pageletlabel).fields.setValueByField(fieldlabel, val)
         else:
             return False
 
