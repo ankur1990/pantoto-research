@@ -17,10 +17,10 @@ class State:
 
 class Transition:
 
-    def __init__(self, state, new_state, hook ):         #state new_state are of type State.
+    def __init__(self, state, new_state, action ):         #state new_state are of type State.
         self.initialState = state
         self.newState = new_state
-        self.hook = hook
+        self.action = action
 
 
 class Transitions:
@@ -28,10 +28,17 @@ class Transitions:
     def __init__(self):
         self.transitions={}
 
-    def addTransition(self,trans,action):            #trans is of type Transition, action is a string in this case.
+    def addTransition(self,trans):            #trans is of type Transition, action is a string in this case.
+        if not self.transitions.has_key(trans.action):
+            self.transitions[trans.action]={}
+        self.transitions[trans.action][trans.initialState.getState()] = [trans.newState.getState(), []]
+
+    def addHookToAction(self,action,hook):
         if not self.transitions.has_key(action):
-            self.transitions[action]={}
-        self.transitions[action][trans.initialState.getState()] = [trans.newState.getState(), trans.hook]
+            return False
+        for i in self.transitions[action]:
+            self.transitions[action][i][1].append(hook)
+        
 
     def executeAction(self, action, state):
         if not self.transitions.has_key(action):
@@ -191,7 +198,8 @@ class System:
         if temp==None:
             return False
         self.setCurrentState(State(temp[0]))
-        temp[1](self)                                                 #calling the hook
+        for hook in temp[1]:
+            hook(self)                                                 #calling the hook
         return True
 
     def getFieldByUser(self,user,pageletlabel,fieldlabel):            #get value of field if the user has permission to read it. Returns None if cant be read.
@@ -212,9 +220,11 @@ class System:
             return None
         return self.view[user]
     
-    def addTransition(self,trans,action):            #trans is of type Transition, action is a string in this case.
-        self.transitions.addTransition(trans,action)
+    def addTransition(self,trans):            #trans is of type Transition.
+        self.transitions.addTransition(trans)
 
+    def addHookToAction(self,action,hook):
+        self.transitions.addHookToAction(action,hook)
 
     
 

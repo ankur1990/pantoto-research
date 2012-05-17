@@ -27,8 +27,9 @@ def hook1(system):
     system.updateFieldView("S","exam","A","rw")
     system.updateFieldView("T","exam","Q","r-")
 
-t = Transition(state, newstate, hook1)
-system.addTransition(t,"sendpaper")                     # "sendpaper" is an event
+t = Transition(state, newstate, "sendpaper")
+system.addTransition(t)                     # "sendpaper" is an event
+system.addHookToAction("sendpaper",hook1)
 # Since the event is just a string (name), we ignore making another class for it.
 
 #defining 2nd transition
@@ -41,8 +42,9 @@ def hook2(system):
     system.updateFieldView("T","exam","A","r-")
     system.updateFieldView("T","exam","G","rw")
 
-t = Transition(state, newstate, hook2)
-system.addTransition(t,"sendanswer")
+t = Transition(state, newstate, "sendanswer")
+system.addTransition(t)
+system.addHookToAction("sendanswer",hook2)
 
 #defining 3rd transition
 state = newstate
@@ -52,8 +54,9 @@ def hook3(system):
     system.updateFieldView("S","exam","G","r-")
     system.updateFieldView("T","exam","G","r-")
 
-t = Transition(state, newstate, hook3)
-system.addTransition(t,"sendgrade")
+t = Transition(state, newstate, "sendgrade")
+system.addTransition(t)
+system.addHookToAction("sendgrade",hook3)
 
 #executing actions
 
